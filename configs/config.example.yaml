@@ -1,0 +1,25 @@
+# WEEX API Configuration
+weex:
+  api_key: "your_api_key_here"
+  secret_key: "your_secret_key_here"
+  passphrase: "your_passphrase_here"
+  env: "testnet"  # production or testnet
+  # api_base_url: "https://api.weex.com"  # Optional, defaults to official
+  # ws_url: "wss://ws.weex.com"  # Optional, defaults to official
+
+# Logging Configuration
+log:
+  level: "info"   # debug, info, warn, error
+  output: "console"  # console, file, both
+
+# Trading Configuration
+trading:
+  default_symbol: "cmt_btcusdt"
+
+# Risk Management Configuration
+risk:
+  max_position_size: 1000.0      # Maximum position size in USDT
+  max_drawdown: 0.1              # Maximum drawdown (10%)
+  stop_loss_percentage: 0.02     # Stop loss (2%)
+  take_profit_percentage: 0.05   # Take profit (5%)
+
