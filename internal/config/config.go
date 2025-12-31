@@ -9,10 +9,10 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	WEEX   WEEXConfig   `mapstructure:"weex"`
-	Log    LogConfig    `mapstructure:"log"`
+	WEEX    WEEXConfig    `mapstructure:"weex"`
+	Log     LogConfig     `mapstructure:"log"`
 	Trading TradingConfig `mapstructure:"trading"`
-	Risk   RiskConfig   `mapstructure:"risk"`
+	Risk    RiskConfig    `mapstructure:"risk"`
 }
 
 // WEEXConfig contains WEEX API configuration
@@ -33,7 +33,7 @@ type LogConfig struct {
 
 // TradingConfig contains trading configuration
 type TradingConfig struct {
-	DefaultSymbol string  `mapstructure:"default_symbol"`
+	DefaultSymbol string `mapstructure:"default_symbol"`
 }
 
 // RiskConfig contains risk management configuration
@@ -45,11 +45,9 @@ type RiskConfig struct {
 }
 
 // Load loads configuration from file and environment variables
-func Load() (*Config, error) {
-	viper.SetConfigName("config")
+// If configPath is empty, it will search in default locations (./configs, .)
+func Load(configPath ...string) (*Config, error) {
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./configs")
-	viper.AddConfigPath(".")
 
 	// Set defaults
 	setDefaults()
@@ -60,6 +58,16 @@ func Load() (*Config, error) {
 
 	// Bind environment variables
 	bindEnvVars()
+
+	// If config path is provided, use it directly
+	if len(configPath) > 0 && configPath[0] != "" {
+		viper.SetConfigFile(configPath[0])
+	} else {
+		// Otherwise, use default search paths
+		viper.SetConfigName("config")
+		viper.AddConfigPath("./configs")
+		viper.AddConfigPath(".")
+	}
 
 	// Try to read config file (optional)
 	if err := viper.ReadInConfig(); err != nil {
@@ -131,4 +139,3 @@ func validate(cfg *Config) error {
 
 	return nil
 }
-

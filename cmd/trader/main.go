@@ -181,7 +181,8 @@ func main() {
 		},
 		Before: func(c *cli.Context) error {
 			// 加载配置
-			cfg, err := config.Load()
+			configPath := c.String("config")
+			cfg, err := config.Load(configPath)
 			if err != nil {
 				return fmt.Errorf("failed to load configuration: %w", err)
 			}

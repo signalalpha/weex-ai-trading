@@ -1,0 +1,98 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Trader - Account",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/trader",
+            "args": ["account"],
+            "env": {
+                "WEEX_API_KEY": "${env:WEEX_API_KEY}",
+                "WEEX_SECRET_KEY": "${env:WEEX_SECRET_KEY}",
+                "WEEX_PASSPHRASE": "${env:WEEX_PASSPHRASE}",
+                "WEEX_ENV": "${env:WEEX_ENV:testnet}",
+                "LOG_LEVEL": "debug"
+            },
+            "console": "integratedTerminal",
+            "showLog": true
+        },
+        {
+            "name": "Launch Trader - Price",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/trader",
+            "args": ["price", "-s", "cmt_btcusdt"],
+            "env": {
+                "WEEX_API_KEY": "${env:WEEX_API_KEY}",
+                "WEEX_SECRET_KEY": "${env:WEEX_SECRET_KEY}",
+                "WEEX_PASSPHRASE": "${env:WEEX_PASSPHRASE}",
+                "WEEX_ENV": "${env:WEEX_ENV:testnet}",
+                "LOG_LEVEL": "debug"
+            },
+            "console": "integratedTerminal",
+            "showLog": true
+        },
+        {
+            "name": "Launch Trader - Test (Official)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/trader",
+            "args": ["test"],
+            "env": {
+                "WEEX_API_KEY": "${env:WEEX_API_KEY}",
+                "WEEX_SECRET_KEY": "${env:WEEX_SECRET_KEY}",
+                "WEEX_PASSPHRASE": "${env:WEEX_PASSPHRASE}",
+                "WEEX_ENV": "${env:WEEX_ENV:testnet}",
+                "LOG_LEVEL": "debug"
+            },
+            "console": "integratedTerminal",
+            "showLog": true
+        },
+        {
+            "name": "Launch Trader - Run",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/trader",
+            "args": ["run"],
+            "env": {
+                "WEEX_API_KEY": "${env:WEEX_API_KEY}",
+                "WEEX_SECRET_KEY": "${env:WEEX_SECRET_KEY}",
+                "WEEX_PASSPHRASE": "${env:WEEX_PASSPHRASE}",
+                "WEEX_ENV": "${env:WEEX_ENV:testnet}",
+                "LOG_LEVEL": "debug"
+            },
+            "console": "integratedTerminal",
+            "showLog": true
+        },
+        {
+            "name": "Launch Trader - Custom Args",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/trader",
+            "args": [],
+            "env": {
+                "WEEX_API_KEY": "${env:WEEX_API_KEY}",
+                "WEEX_SECRET_KEY": "${env:WEEX_SECRET_KEY}",
+                "WEEX_PASSPHRASE": "${env:WEEX_PASSPHRASE}",
+                "WEEX_ENV": "${env:WEEX_ENV:testnet}",
+                "LOG_LEVEL": "debug"
+            },
+            "console": "integratedTerminal",
+            "showLog": true
+        },
+        {
+            "name": "Attach to Process",
+            "type": "go",
+            "request": "attach",
+            "mode": "local",
+            "processId": 0
+        }
+    ]
+}
+
