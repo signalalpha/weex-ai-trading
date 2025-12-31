@@ -64,6 +64,9 @@ bin/
 dist/
 build/
 
+# Makefile 相关（通常不需要忽略）
+# Makefile
+
 # Coverage reports
 coverage.html
 coverage.xml

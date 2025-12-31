@@ -19,53 +19,112 @@ WEEX AI Trading 黑客松大赛参赛项目 - 基于人工智能的自动化交�
 
 - **语言**: Go 1.21+
 - **API**: WEEX REST API & WebSocket
-- **存储**: (待定)
 - **配置**: Viper
-- **日志**: Logrus/Zap
-
-## 项目状态
-
-🚧 **开发中** - 当前处于早期开发阶段
-
-- [x] 项目初始化
-- [ ] API集成
-- [ ] 策略开发
-- [ ] 系统集成
-- [ ] 测试优化
+- **日志**: Logrus
+- **CLI**: urfave/cli
 
 ## 快速开始
 
 ### 前置要求
 
 - Go 1.21 或更高版本
-- WEEX API Key 和 Secret Key
+- WEEX API Key、Secret Key 和 Passphrase
 
 ### 安装
 
 ```bash
 git clone https://github.com/signalalpha/weex-ai-trading.git
 cd weex-ai-trading
-go mod download
+make deps  # 或: go mod download
 ```
 
 ### 配置
 
-1. 复制配置文件示例：
+1. 复制环境变量文件：
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 2. 编辑 `.env` 文件，填入你的 API Key：
 ```env
 WEEX_API_KEY=your_api_key
 WEEX_SECRET_KEY=your_secret_key
-WEEX_ENV=production  # 或 testnet
+WEEX_PASSPHRASE=your_passphrase
+WEEX_ENV=testnet  # 或 production
 ```
 
-### 运行
+### 构建
 
+#### 构建当前平台版本
 ```bash
-go run cmd/trader/main.go
+make build
+# 或
+go build -o bin/trader cmd/trader/main.go
+```
+
+#### 构建 Linux AMD64 版本（用于服务器部署）
+```bash
+make build-linux
+# 二进制文件: bin/trader-linux-amd64
+```
+
+#### 查看所有可用命令
+```bash
+make help
+```
+
+### 使用 CLI 命令
+
+#### 查询账户信息
+```bash
+./bin/trader account
+```
+
+#### 获取价格
+```bash
+./bin/trader price --symbol cmt_btcusdt
+```
+
+#### 设置杠杆
+```bash
+./bin/trader leverage --symbol cmt_btcusdt --long 1 --short 1 --mode 1
+```
+
+#### 下单
+```bash
+# 市价单
+./bin/trader order --symbol cmt_btcusdt --side buy --type market --size 10
+
+# 限价单
+./bin/trader order --symbol cmt_btcusdt --side buy --type limit --size 10 --price 80000
+```
+
+#### 运行完整 API 测试（官方要求）
+```bash
+./bin/trader test
+```
+
+### 部署到服务器
+
+1. 构建 Linux 版本：
+```bash
+make build-linux
+```
+
+2. 拷贝到服务器：
+```bash
+scp bin/trader-linux-amd64 user@server:/path/to/destination/
+```
+
+3. 在服务器上设置权限并运行：
+```bash
+chmod +x trader-linux-amd64
+./trader-linux-amd64 --help
+```
+
+或者使用部署检查命令查看详细步骤：
+```bash
+make deploy-check
 ```
 
 ## 项目结构
@@ -73,26 +132,65 @@ go run cmd/trader/main.go
 ```
 weex-ai-trading/
 ├── cmd/              # 应用程序入口
+│   └── trader/       # 主程序
 ├── internal/         # 内部包
 │   ├── api/         # API客户端
 │   ├── collector/   # 数据采集
 │   ├── strategy/    # 策略引擎
 │   ├── execution/   # 执行引擎
 │   ├── risk/        # 风控系统
-│   └── config/      # 配置管理
+│   ├── config/      # 配置管理
+│   └── monitor/     # 监控日志
 ├── pkg/             # 可复用的包
 ├── configs/         # 配置文件
-├── docs/            # 文档
-└── tests/           # 测试
+├── tests/           # 测试
+│   └── api/         # API 测试脚本（Python）
+├── scripts/         # 脚本文件
+├── bin/             # 构建输出目录
+├── Makefile         # 构建脚本
+├── go.mod           # Go 模块定义
+└── README.md        # 本文档
 ```
 
-## 使用说明
+## Makefile 命令
 
-（待补充）
+- `make help` - 显示帮助信息
+- `make build` - 构建当前平台版本
+- `make build-linux` - 构建 Linux AMD64 版本（推荐用于服务器部署）
+- `make build-all` - 构建多个平台版本
+- `make clean` - 清理构建文件
+- `make deps` - 下载并整理依赖
+- `make fmt` - 格式化代码
+- `make vet` - 运行 go vet
+- `make lint` - 运行代码检查
+- `make test` - 运行测试
+- `make run` - 运行程序（开发模式）
+- `make deploy-check` - 构建并检查部署文件
 
-## 开发计划
+## 开发
 
-详细开发计划请参考：[项目实施计划](../roadmap/项目实施计划.md)
+```bash
+# 设置开发环境
+make dev-setup
+
+# 运行程序
+make run
+
+# 或使用 go run
+go run cmd/trader/main.go --help
+```
+
+## 项目状态
+
+🚧 **开发中** - 当前处于开发阶段
+
+- [x] 项目初始化
+- [x] API 客户端基础框架
+- [x] CLI 命令集成
+- [ ] 数据采集模块
+- [ ] 策略引擎
+- [ ] 系统集成
+- [ ] 测试优化
 
 ## 许可证
 
@@ -105,10 +203,6 @@ MIT License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
-
-## 联系方式
-
-- 项目主页: https://github.com/signalalpha/weex-ai-trading
 
 ---
 
