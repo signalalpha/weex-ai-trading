@@ -4,9 +4,10 @@
 BINARY_NAME=trader
 CMD_PATH=./cmd/trader
 BUILD_DIR=./bin
-VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "v0.1.0-dev")
 BUILD_TIME=$(shell date +%Y-%m-%d_%H:%M:%S)
-LDFLAGS=-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)
+GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LDFLAGS=-X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT)
 
 # 默认目标
 .DEFAULT_GOAL := help

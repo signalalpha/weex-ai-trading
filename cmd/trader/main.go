@@ -13,10 +13,17 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+var (
+	Version   = "dev"
+	BuildTime = "unknown"
+	GitCommit = "unknown"
+)
+
 func main() {
 	app := &cli.App{
-		Name:  "trader",
-		Usage: "WEEX AI Trading 交易系统",
+		Name:    "trader",
+		Usage:   "WEEX AI Trading 交易系统",
+		Version: fmt.Sprintf("%s (build: %s, commit: %s)", Version, BuildTime, GitCommit),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "config",
