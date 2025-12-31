@@ -6,8 +6,13 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
+            "cwd": "${workspaceFolder}",
             "program": "${workspaceFolder}/cmd/trader",
-            "args": ["account"],
+            "args": [
+                "-c",
+                "${workspaceFolder}/configs/config.yaml",
+                "account",
+            ],
             "env": {
                 "WEEX_API_KEY": "${env:WEEX_API_KEY}",
                 "WEEX_SECRET_KEY": "${env:WEEX_SECRET_KEY}",

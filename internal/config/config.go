@@ -82,6 +82,21 @@ func Load(configPath ...string) (*Config, error) {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}
 
+	// After unmarshaling, manually check and apply environment variables
+	// This ensures env vars override config file values
+	if envAPIKey := os.Getenv("WEEX_API_KEY"); envAPIKey != "" {
+		cfg.WEEX.APIKey = envAPIKey
+	}
+	if envSecretKey := os.Getenv("WEEX_SECRET_KEY"); envSecretKey != "" {
+		cfg.WEEX.SecretKey = envSecretKey
+	}
+	if envPassphrase := os.Getenv("WEEX_PASSPHRASE"); envPassphrase != "" {
+		cfg.WEEX.Passphrase = envPassphrase
+	}
+	if envEnv := os.Getenv("WEEX_ENV"); envEnv != "" {
+		cfg.WEEX.Env = envEnv
+	}
+
 	// Validate required fields
 	if err := validate(&cfg); err != nil {
 		return nil, err
@@ -112,25 +127,38 @@ func bindEnvVars() {
 }
 
 func validate(cfg *Config) error {
-	if cfg.WEEX.APIKey == "" || cfg.WEEX.APIKey == "your_api_key_here" {
-		// Allow empty during development, but warn
-		if os.Getenv("WEEX_API_KEY") == "" {
-			return fmt.Errorf("WEEX_API_KEY is required")
+	// Check API Key - viper should have merged config file and env vars
+	// So we check the final value in cfg, which should have env vars if they exist
+	apiKey := cfg.WEEX.APIKey
+	if apiKey == "" || apiKey == "your_api_key_here" {
+		// Also check environment variable directly as fallback
+		if envKey := os.Getenv("WEEX_API_KEY"); envKey != "" {
+			// Env var exists, update the config
+			cfg.WEEX.APIKey = envKey
+		} else {
+			return fmt.Errorf("WEEX_API_KEY is required (set via environment variable or config file)")
 		}
 	}
 
-	if cfg.WEEX.SecretKey == "" || cfg.WEEX.SecretKey == "your_secret_key_here" {
-		if os.Getenv("WEEX_SECRET_KEY") == "" {
-			return fmt.Errorf("WEEX_SECRET_KEY is required")
+	secretKey := cfg.WEEX.SecretKey
+	if secretKey == "" || secretKey == "your_secret_key_here" {
+		if envKey := os.Getenv("WEEX_SECRET_KEY"); envKey != "" {
+			cfg.WEEX.SecretKey = envKey
+		} else {
+			return fmt.Errorf("WEEX_SECRET_KEY is required (set via environment variable or config file)")
 		}
 	}
 
-	if cfg.WEEX.Passphrase == "" || cfg.WEEX.Passphrase == "your_passphrase_here" {
-		if os.Getenv("WEEX_PASSPHRASE") == "" {
-			// Passphrase might be optional for some endpoints, but usually required
-			// Uncomment the following line if it's mandatory:
-			// return fmt.Errorf("WEEX_PASSPHRASE is required")
+	passphrase := cfg.WEEX.Passphrase
+	if passphrase == "" || passphrase == "your_passphrase_here" {
+		if envKey := os.Getenv("WEEX_PASSPHRASE"); envKey != "" {
+			cfg.WEEX.Passphrase = envKey
 		}
+		// Passphrase might be optional for some endpoints, but usually required
+		// Uncomment the following lines if it's mandatory:
+		// else {
+		// 	return fmt.Errorf("WEEX_PASSPHRASE is required")
+		// }
 	}
 
 	if cfg.WEEX.Env != "production" && cfg.WEEX.Env != "testnet" {
