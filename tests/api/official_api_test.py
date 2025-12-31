@@ -250,7 +250,7 @@ def step7_get_order_history():
 def step8_get_trade_details():
     """步骤 8: 获取交易详情"""
     print("\n[步骤 8] 获取交易详情")
-    request_path = "/capi/v2/order/trade"
+    request_path = "/capi/v2/order/fills"
     query_string = f"?symbol={SYMBOL}&pageSize=10"
     response = send_request("GET", request_path, query_string=query_string)
     data = print_response("获取交易详情", response)
