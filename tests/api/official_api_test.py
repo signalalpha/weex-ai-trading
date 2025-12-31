@@ -106,14 +106,32 @@ def step2_check_account_balance():
     request_path = "/capi/v2/account/assets"
     response = send_request("GET", request_path)
     data = print_response("检查账户余额", response)
-    
+    # 返回示例（直接是数组，没有 data 层级）:
+    # [
+    #   {
+    #     "coinName": "USDT",
+    #     "available": "5413.06877369",
+    #     "equity": "5696.49288823",
+    #     "frozen": "81.28240000",
+    #     "unrealizePnl": "-34.55300000"
+    #   }
+    # ]
     if response.status_code == 200 and data:
-        # 尝试提取余额信息
-        if 'data' in data:
-            print(f"\n✅ 账户信息获取成功")
-            if isinstance(data['data'], dict):
-                if 'totalEquity' in data['data']:
-                    print(f"总权益: {data['data']['totalEquity']}")
+        print(f"\n✅ 账户信息获取成功")
+        # data 直接就是数组
+        if isinstance(data, list):
+            print(f"\n账户资产:")
+            for asset in data:
+                coin_name = asset.get('coinName', 'N/A')
+                available = asset.get('available', '0')
+                equity = asset.get('equity', '0')
+                frozen = asset.get('frozen', '0')
+                unrealize_pnl = asset.get('unrealizePnl', '0')
+                print(f"  {coin_name}:")
+                print(f"    可用余额: {available}")
+                print(f"    权益: {equity}")
+                print(f"    冻结: {frozen}")
+                print(f"    未实现盈亏: {unrealize_pnl}")
         return data
     else:
         print(f"❌ 获取账户余额失败")
@@ -150,9 +168,9 @@ def step4_get_asset_price():
     data = print_response("获取资产价格", response)
     
     if response.status_code == 200 and data:
-        # 提取最新价格
-        if 'data' in data and isinstance(data['data'], dict):
-            last_price = data['data'].get('last') or data['data'].get('lastPrice')
+        # data 直接就是对象，没有 data 层级
+        if isinstance(data, dict):
+            last_price = data.get('last') or data.get('lastPrice')
             if last_price:
                 print(f"\n✅ 当前价格: {last_price} USDT")
                 return float(last_price)
@@ -172,21 +190,21 @@ def step5_place_order(price=None):
             print("❌ 无法获取价格，无法下单")
             return None
     
-    # 计算数量：至少 10 USDT
-    # 使用市价单，数量以 USDT 计价
-    order_value = 10.0  # 10 USDT
+    # 订单数量：0.0001 BTC
+    order_value = 0.0001  # 0.0001 BTC
     
     # 生成唯一的客户端订单ID
     client_oid = str(int(time.time() * 1000))
     
     request_path = "/capi/v2/order/placeOrder"
+    # 比市价低 1% 下限价单
     body = {
         "symbol": SYMBOL,
         "client_oid": client_oid,
-        "size": str(order_value),  # 10 USDT
+        "size": str(order_value),  # 0.0001 BTC
         "type": "1",  # 1 = 开多, 2 = 开空
-        "order_type": "0",  # 0 = 市价单, 1 = 限价单
-        "match_price": "1",  # 1 = 对手价（市价单）
+        "order_type": "1",  # 0:普通，1:只做maker；2:全部成交或立即取消；3:立即成交并取消剩余
+        "match_price": "0",  # 0:限价，1:市价
         "price": str(int(price))  # 价格（市价单时可能不生效，但需要提供）
     }
     
@@ -194,14 +212,15 @@ def step5_place_order(price=None):
     
     response = send_request("POST", request_path, body=body)
     data = print_response("下单", response)
-    
+    # 返回示例:
+    # {
+    #     "client_oid": null,
+    #     "order_id": "596471064624628269"
+    # }
     if response.status_code == 200 and data:
         order_id = None
-        if 'data' in data:
-            if isinstance(data['data'], dict):
-                order_id = data['data'].get('orderId') or data['data'].get('order_id')
-            elif isinstance(data['data'], str):
-                order_id = data['data']
+        if isinstance(data, dict):
+            order_id = data.get('order_id')
         
         if order_id:
             print(f"\n✅ 订单提交成功! 订单ID: {order_id}")
