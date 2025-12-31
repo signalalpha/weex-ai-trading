@@ -146,7 +146,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 
 // GetAccountInfo retrieves account information
 func (c *Client) GetAccountInfo() (*AccountInfo, error) {
-	path := "/capi/v2/account/info"
+	path := "/capi/v2/account/assets"
 	resp, err := c.doRequest("GET", path, "", nil)
 	if err != nil {
 		return nil, err
@@ -228,9 +228,9 @@ func (c *Client) CancelOrder(orderID string) error {
 func (c *Client) SetLeverage(symbol string, marginMode int, longLeverage, shortLeverage string) error {
 	path := "/capi/v2/account/leverage"
 	body := map[string]interface{}{
-		"symbol":       symbol,
-		"marginMode":   marginMode,
-		"longLeverage": longLeverage,
+		"symbol":        symbol,
+		"marginMode":    marginMode,
+		"longLeverage":  longLeverage,
 		"shortLeverage": shortLeverage,
 	}
 	resp, err := c.doRequest("POST", path, "", body)
@@ -240,4 +240,3 @@ func (c *Client) SetLeverage(symbol string, marginMode int, longLeverage, shortL
 
 	return c.parseResponse(resp, nil)
 }
-
