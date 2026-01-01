@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/signalalpha/weex-ai-trading/internal/api"
 	"github.com/signalalpha/weex-ai-trading/internal/config"
 	"github.com/signalalpha/weex-ai-trading/internal/monitor"
+	weexgo "github.com/signalalpha/weex-go"
 	"github.com/urfave/cli/v2"
 )
 
@@ -206,9 +206,20 @@ func main() {
 	}
 }
 
-func getClient(c *cli.Context) (*api.Client, error) {
+func getClient(c *cli.Context) (*weexgo.Client, error) {
 	cfg := c.App.Metadata["config"].(*config.Config)
-	return api.NewClient(cfg)
+
+	opts := []weexgo.ClientOption{
+		weexgo.WithAPIKey(cfg.WEEX.APIKey),
+		weexgo.WithSecretKey(cfg.WEEX.SecretKey),
+		weexgo.WithPassphrase(cfg.WEEX.Passphrase),
+	}
+
+	if cfg.WEEX.APIBaseURL != "" {
+		opts = append(opts, weexgo.WithBaseURL(cfg.WEEX.APIBaseURL))
+	}
+
+	return weexgo.NewClient(opts...)
 }
 
 func printJSON(data interface{}) {
@@ -227,13 +238,13 @@ func cmdAccount(c *cli.Context) error {
 	}
 
 	fmt.Println("查询账户信息...")
-	accountInfo, err := client.GetAccountInfo()
+	accountAssets, err := client.GetAccountAssets()
 	if err != nil {
-		return fmt.Errorf("failed to get account info: %w", err)
+		return fmt.Errorf("failed to get account assets: %w", err)
 	}
 
 	fmt.Println("\n账户信息:")
-	printJSON(accountInfo)
+	printJSON(accountAssets)
 	return nil
 }
 
@@ -289,32 +300,32 @@ func cmdPlaceOrder(c *cli.Context) error {
 	orderTypeStr := c.String("type")
 	size := c.String("size")
 
-	var side api.OrderSide
+	var side weexgo.OrderSide
 	if sideStr == "buy" {
-		side = api.OrderSideBuy
+		side = weexgo.OrderSideBuy
 	} else if sideStr == "sell" {
-		side = api.OrderSideSell
+		side = weexgo.OrderSideSell
 	} else {
 		return fmt.Errorf("invalid side: %s (must be buy or sell)", sideStr)
 	}
 
-	var orderType api.OrderType
+	var orderType weexgo.OrderType
 	if orderTypeStr == "market" {
-		orderType = api.OrderTypeMarket
+		orderType = weexgo.OrderTypeMarket
 	} else if orderTypeStr == "limit" {
-		orderType = api.OrderTypeLimit
+		orderType = weexgo.OrderTypeLimit
 	} else {
 		return fmt.Errorf("invalid order type: %s (must be market or limit)", orderTypeStr)
 	}
 
-	req := &api.CreateOrderRequest{
+	req := &weexgo.CreateOrderRequest{
 		Symbol:    symbol,
 		Side:      side,
 		OrderType: orderType,
 		Quantity:  size,
 	}
 
-	if orderType == api.OrderTypeLimit {
+	if orderType == weexgo.OrderTypeLimit {
 		price := c.String("price")
 		if price == "" {
 			return fmt.Errorf("price is required for limit orders")
@@ -363,12 +374,12 @@ func cmdOfficialTest(c *cli.Context) error {
 
 	// 步骤 1: 检查账户余额
 	fmt.Println("\n[步骤 1] 检查账户余额")
-	accountInfo, err := client.GetAccountInfo()
+	accountAssets, err := client.GetAccountAssets()
 	if err != nil {
-		return fmt.Errorf("failed to get account info: %w", err)
+		return fmt.Errorf("failed to get account assets: %w", err)
 	}
 	fmt.Println("✅ 账户信息获取成功")
-	printJSON(accountInfo)
+	printJSON(accountAssets)
 
 	// 步骤 2: 设置杠杆
 	fmt.Println("\n[步骤 2] 设置杠杆 (1x, 全仓模式)")
@@ -390,10 +401,10 @@ func cmdOfficialTest(c *cli.Context) error {
 
 	// 步骤 4: 下单
 	fmt.Println("\n[步骤 4] 下单 (10 USDT)")
-	orderReq := &api.CreateOrderRequest{
+	orderReq := &weexgo.CreateOrderRequest{
 		Symbol:    symbol,
-		Side:      api.OrderSideBuy,
-		OrderType: api.OrderTypeMarket,
+		Side:      weexgo.OrderSideBuy,
+		OrderType: weexgo.OrderTypeMarket,
 		Quantity:  "10",
 	}
 	order, err := client.CreateOrder(orderReq)

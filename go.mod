@@ -1,8 +1,9 @@
 module github.com/signalalpha/weex-ai-trading
 
-go 1.21
+go 1.25.3
 
 require (
+	github.com/signalalpha/weex-go v0.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.2
 	github.com/urfave/cli/v2 v2.27.1
