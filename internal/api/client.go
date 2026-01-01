@@ -144,8 +144,9 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 	return nil
 }
 
-// GetAccountInfo retrieves account information
-func (c *Client) GetAccountInfo() (*AccountInfo, error) {
+// GetAccountInfo retrieves account assets information
+// Returns a slice of AccountBalance (direct array response from /capi/v2/account/assets)
+func (c *Client) GetAccountInfo() (AccountInfo, error) {
 	path := "/capi/v2/account/assets"
 	resp, err := c.doRequest("GET", path, "", nil)
 	if err != nil {
@@ -157,7 +158,7 @@ func (c *Client) GetAccountInfo() (*AccountInfo, error) {
 		return nil, err
 	}
 
-	return &accountInfo, nil
+	return accountInfo, nil
 }
 
 // GetTicker retrieves ticker information for a symbol
