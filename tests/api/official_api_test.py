@@ -139,20 +139,20 @@ def step2_check_account_balance():
 
 
 def step3_set_leverage():
-    """步骤 3: 设置杠杆为 1x（全仓模式）"""
+    """步骤 3: 设置杠杆为 20x（全仓模式）"""
     print("\n[步骤 3] 设置杠杆")
     request_path = "/capi/v2/account/leverage"
     body = {
         "symbol": SYMBOL,
         "marginMode": 1,  # 1 = 全仓模式
-        "longLeverage": "1",
-        "shortLeverage": "1"
+        "longLeverage": "20",
+        "shortLeverage": "20"
     }
     response = send_request("POST", request_path, body=body)
-    data = print_response("设置杠杆 (1x, 全仓模式)", response)
+    data = print_response("设置杠杆 (20x, 全仓模式)", response)
     
     if response.status_code == 200:
-        print(f"✅ 杠杆设置成功: 1x (全仓)")
+        print(f"✅ 杠杆设置成功: 20x (全仓)")
         return True
     else:
         print(f"⚠️  杠杆设置可能失败，继续执行...")
@@ -230,7 +230,7 @@ def step5_place_limit_buy_order(price):
     
     # 计算限价：当前价格的95%（比市价低5%）
     limit_price = price * 0.95
-    order_size = 0.0001  # 0.0001 BTC
+    order_size = 0.005  # 0.005 BTC
     
     print(f"当前价格: {price} USDT")
     print(f"限价: {limit_price} USDT (95% of current price)")
@@ -252,7 +252,7 @@ def step6_place_market_buy_order(price):
     """步骤 6: 下市价买单（确保成交后能查到交易历史）"""
     print("\n[步骤 6] 下市价买单")
     
-    order_size = 0.0001  # 0.0001 BTC
+    order_size = 0.005  # 0.005 BTC
     print(f"当前价格: {price} USDT")
     print(f"订单数量: {order_size} BTC")
     
@@ -272,7 +272,7 @@ def step7_place_market_sell_order(price):
     """步骤 7: 下市价卖单（平仓）"""
     print("\n[步骤 7] 下市价卖单（平仓）")
     
-    order_size = 0.0001  # 0.0001 BTC
+    order_size = 0.005  # 0.005 BTC
     print(f"当前价格: {price} USDT")
     print(f"订单数量: {order_size} BTC")
     
