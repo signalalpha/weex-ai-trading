@@ -1,1 +1,7 @@
 /__pycache__
+
+# API Keys 文件（不要提交真实的 API keys）
+api_keys.json
+api_keys.csv
+test_results.json
+test_results_*.json
