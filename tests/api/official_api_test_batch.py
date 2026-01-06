@@ -33,8 +33,30 @@ BASE_URL = "https://api-contract.weex.com"
 SYMBOL = "cmt_btcusdt"  # 官方测试交易对
 
 
+def mask_proxy_url(proxy_url: str) -> str:
+    """安全地显示代理 URL，隐藏密码部分"""
+    if '@' not in proxy_url:
+        return proxy_url  # 没有认证信息，直接返回
+    try:
+        # 格式: http://username:password@host:port
+        protocol, rest = proxy_url.split('://', 1)
+        if '@' in rest:
+            auth, host_port = rest.rsplit('@', 1)
+            username = auth.split(':', 1)[0] if ':' in auth else auth
+            return f"{protocol}://{username}:***@{host_port}"
+    except Exception:
+        pass  # 解析失败，返回原 URL
+    return proxy_url
+
+
 class WEEXAPIClient:
-    """WEEX API 客户端，支持代理"""
+    """WEEX API 客户端，支持代理
+    
+    代理格式支持：
+    - 不带认证: http://proxy.example.com:3128
+    - 带认证: http://username:password@proxy.example.com:3128
+    - Squid 代理完全支持以上两种格式
+    """
     
     def __init__(self, api_key: str, secret_key: str, passphrase: str, proxy: Optional[str] = None):
         self.api_key = api_key
@@ -43,13 +65,17 @@ class WEEXAPIClient:
         self.proxy = proxy
         self.session = requests.Session()
         
-        # 配置代理
+        # 配置代理（requests 库原生支持带认证的代理 URL）
         if proxy:
-            self.session.proxies = {
-                'http': proxy,
-                'https': proxy,
+            self.proxies = {
+                'http': proxy,   # 同时设置 HTTP 和 HTTPS，Squid 代理需要
+                'https': proxy,  # requests 会自动通过 HTTP CONNECT 方法处理 HTTPS
             }
-            print(f"✅ 已配置代理: {proxy}")
+            # 同时设置到 session.proxies（虽然我们会在请求时显式传递，但保留此设置作为备用）
+            self.session.proxies = self.proxies
+            print(f"✅ 已配置代理: {mask_proxy_url(proxy)}")
+        else:
+            self.proxies = None
     
     def generate_signature(self, timestamp: str, method: str, request_path: str, query_string: str, body: str = "") -> str:
         """生成 API 签名"""
@@ -80,10 +106,11 @@ class WEEXAPIClient:
             else:
                 url += "?" + query_string
         
+        # 显式传递 proxies 参数，确保代理生效（与 test_week.py 一致）
         if method == "GET":
-            response = self.session.get(url, headers=headers, timeout=30)
+            response = self.session.get(url, headers=headers, proxies=self.proxies, timeout=120)
         elif method == "POST":
-            response = self.session.post(url, headers=headers, data=body_str, timeout=30)
+            response = self.session.post(url, headers=headers, data=body_str, proxies=self.proxies, timeout=120)
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
         
@@ -392,7 +419,9 @@ class WEEXAPIClient:
         print("="*60)
         print("WEEX AI Trading Hackathon - API 测试")
         print("="*60)
-        print(f"\nAPI Key: {self.api_key[:10]}...")
+        # 安全显示 API key
+        api_key_display = self.api_key[:10] + "..." if self.api_key and len(self.api_key) > 10 else (self.api_key or "N/A")
+        print(f"\nAPI Key: {api_key_display}")
         print(f"交易对: {SYMBOL}")
         print(f"测试流程: 检查余额 -> 取消活跃订单 -> 设置杠杆 -> 限价买单 -> 查询当前委托 -> 市价买单 -> 市价卖单 -> 查询历史 -> 取消限价单 -> 最终清理")
         print(f"\n开始测试...")
@@ -496,11 +525,26 @@ def load_api_keys_from_csv(file_path: str) -> List[Dict[str, str]]:
     api_keys = []
     with open(file_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
-        for row in reader:
+        for row_num, row in enumerate(reader, start=2):  # 从第2行开始（第1行是标题）
+            # 尝试多种字段名
+            api_key = row.get('api_key') or row.get('WEEX_API_KEY') or row.get('apiKey')
+            secret_key = row.get('secret_key') or row.get('WEEX_SECRET_KEY') or row.get('secretKey')
+            passphrase = row.get('passphrase') or row.get('WEEX_PASSPHRASE') or row.get('Passphrase')
+            
+            # 跳过空行
+            if not api_key and not secret_key and not passphrase:
+                continue
+            
+            # 验证必需的字段
+            if not api_key or not secret_key or not passphrase:
+                print(f"⚠️  警告: CSV 第 {row_num} 行缺少必需的字段，已跳过")
+                print(f"    api_key: {'有' if api_key else '缺失'}, secret_key: {'有' if secret_key else '缺失'}, passphrase: {'有' if passphrase else '缺失'}")
+                continue
+            
             api_keys.append({
-                'api_key': row.get('api_key') or row.get('WEEX_API_KEY'),
-                'secret_key': row.get('secret_key') or row.get('WEEX_SECRET_KEY'),
-                'passphrase': row.get('passphrase') or row.get('WEEX_PASSPHRASE')
+                'api_key': api_key.strip(),
+                'secret_key': secret_key.strip(),
+                'passphrase': passphrase.strip()
             })
     return api_keys
 
@@ -598,7 +642,7 @@ CSV 格式 (api_keys.csv):
     
     # 显示代理信息
     if args.proxy:
-        print(f"🌐 使用代理: {args.proxy}")
+        print(f"🌐 使用代理: {mask_proxy_url(args.proxy)}")
     else:
         print("⚠️  未使用代理，如果 IP 不在白名单中可能会失败")
     
@@ -609,6 +653,21 @@ CSV 格式 (api_keys.csv):
         print("\n" + "="*80)
         print(f"测试 API Key {idx}/{len(api_keys_list)}")
         print("="*80)
+        
+        # 验证 API key 数据
+        if not creds.get('api_key') or not creds.get('secret_key') or not creds.get('passphrase'):
+            print(f"⚠️  错误: API Key {idx} 数据不完整，已跳过")
+            print(f"    api_key: {'有' if creds.get('api_key') else '缺失'}")
+            print(f"    secret_key: {'有' if creds.get('secret_key') else '缺失'}")
+            print(f"    passphrase: {'有' if creds.get('passphrase') else '缺失'}")
+            all_results.append({
+                'api_key': creds.get('api_key', 'N/A'),
+                'start_time': datetime.now().isoformat(),
+                'success': False,
+                'error': 'API key 数据不完整',
+                'end_time': datetime.now().isoformat()
+            })
+            continue
         
         client = WEEXAPIClient(
             api_key=creds['api_key'],
@@ -622,7 +681,8 @@ CSV 格式 (api_keys.csv):
         
         # 显示简要结果
         print("\n" + "-"*80)
-        print(f"API Key: {creds['api_key'][:10]}...")
+        api_key_display = creds['api_key'][:10] + "..." if creds['api_key'] and len(creds['api_key']) > 10 else (creds['api_key'] or 'N/A')
+        print(f"API Key: {api_key_display}")
         print(f"测试结果: {'✅ 成功' if result['success'] else '❌ 失败'}")
         if result.get('error'):
             print(f"错误信息: {result['error']}")

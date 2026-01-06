@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/signalalpha/weex-ai-trading/internal/config"
 	"github.com/signalalpha/weex-ai-trading/internal/monitor"
+	"github.com/signalalpha/weex-ai-trading/internal/trader"
 	weexgo "github.com/signalalpha/weex-go"
 	"github.com/urfave/cli/v2"
 )
@@ -174,8 +177,15 @@ func main() {
 				Action: cmdOfficialTest,
 			},
 			{
-				Name:   "run",
-				Usage:  "启动交易系统",
+				Name:  "run",
+				Usage: "启动AI交易系统",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  "dry-run",
+						Usage: "模拟运行模式（不实际下单）",
+						Value: false,
+					},
+				},
 				Action: cmdRun,
 			},
 		},
@@ -427,12 +437,60 @@ func cmdOfficialTest(c *cli.Context) error {
 }
 
 func cmdRun(c *cli.Context) error {
+	cfg := c.App.Metadata["config"].(*config.Config)
 	logger := c.App.Metadata["logger"].(*monitor.Logger)
-	logger.Info("Starting WEEX AI Trading system...")
 
-	// TODO: Initialize and start trading system
-	logger.Info("Trading system initialized. Waiting for shutdown signal...")
-	logger.Info("(Trading system not yet implemented)")
+	// 检查 Claude API Key
+	claudeAPIKey := os.Getenv("CLAUDE_API_KEY")
+	if claudeAPIKey == "" {
+		return fmt.Errorf("CLAUDE_API_KEY environment variable is required")
+	}
 
+	// 创建 WEEX 客户端
+	client, err := getClient(c)
+	if err != nil {
+		return fmt.Errorf("failed to create WEEX client: %w", err)
+	}
+
+	// 创建引擎配置
+	engineConfig := trader.EngineConfig{
+		Symbol:              cfg.Trading.DefaultSymbol,
+		DecisionInterval:    60, // 每60秒决策一次
+		MaxPosition:         0.01, // 最大持仓0.01 BTC
+		ClaudeModel:         "claude-3-5-sonnet-20241022",
+		ClaudeAPIKey:        claudeAPIKey,
+		EnableMultiTimeframe: false, // 暂时禁用多时间框架（需要K线API支持）
+		EnableOrderBook:     false, // 暂时禁用订单簿（需要API支持）
+		DryRun:              c.Bool("dry-run"),
+		LogLevel:            cfg.Log.Level,
+	}
+
+	// 创建交易引擎
+	engine, err := trader.NewEngine(engineConfig, client, logger)
+	if err != nil {
+		return fmt.Errorf("failed to create trading engine: %w", err)
+	}
+
+	// 设置信号处理
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// 启动引擎（异步）
+	go func() {
+		if err := engine.Run(); err != nil {
+			logger.Errorf("Engine error: %v", err)
+		}
+	}()
+
+	logger.Info("✅ 交易引擎已启动，按 Ctrl+C 停止")
+
+	// 等待停止信号
+	<-sigChan
+	logger.Info("\n收到停止信号，正在关闭...")
+
+	// 停止引擎
+	engine.Stop()
+
+	logger.Info("👋 交易引擎已停止")
 	return nil
 }
