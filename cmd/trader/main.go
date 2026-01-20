@@ -229,6 +229,10 @@ func getClient(c *cli.Context) (*weexgo.Client, error) {
 		opts = append(opts, weexgo.WithBaseURL(cfg.WEEX.APIBaseURL))
 	}
 
+	if cfg.WEEX.Proxy != "" {
+		opts = append(opts, weexgo.WithProxy(cfg.WEEX.Proxy))
+	}
+
 	return weexgo.NewClient(opts...)
 }
 
@@ -328,19 +332,38 @@ func cmdPlaceOrder(c *cli.Context) error {
 		return fmt.Errorf("invalid order type: %s (must be market or limit)", orderTypeStr)
 	}
 
+	// 解析数量和价格
+	var quantityFloat float64
+	if _, err := fmt.Sscanf(size, "%f", &quantityFloat); err != nil {
+		return fmt.Errorf("invalid size format: %s", size)
+	}
+
+	// 根据交易对精度调整数量
+	adjustedSize := trader.AdjustSizeToPrecision(quantityFloat, symbol)
+	adjustedSizeStr := fmt.Sprintf("%.6f", adjustedSize)
+
 	req := &weexgo.CreateOrderRequest{
 		Symbol:    symbol,
 		Side:      side,
 		OrderType: orderType,
-		Quantity:  size,
+		Quantity:  adjustedSizeStr,
 	}
 
 	if orderType == weexgo.OrderTypeLimit {
-		price := c.String("price")
-		if price == "" {
+		priceStr := c.String("price")
+		if priceStr == "" {
 			return fmt.Errorf("price is required for limit orders")
 		}
-		req.Price = price
+
+		// 解析价格
+		var priceFloat float64
+		if _, err := fmt.Sscanf(priceStr, "%f", &priceFloat); err != nil {
+			return fmt.Errorf("invalid price format: %s", priceStr)
+		}
+
+		// 根据交易对精度调整价格
+		adjustedPrice := trader.AdjustPriceToPrecision(priceFloat, symbol)
+		req.Price = trader.FormatPriceString(adjustedPrice, symbol)
 	}
 
 	fmt.Printf("下单: %s %s %s %s USDT...\n", side, orderType, symbol, size)
@@ -357,8 +380,27 @@ func cmdPlaceOrder(c *cli.Context) error {
 }
 
 func cmdCurrentOrders(c *cli.Context) error {
-	// TODO: 需要实现 GetCurrentOrders 方法
-	return fmt.Errorf("not implemented yet")
+	client, err := getClient(c)
+	if err != nil {
+		return err
+	}
+
+	symbol := c.String("symbol")
+	fmt.Printf("查询 %s 的当前活跃订单...\n", symbol)
+
+	orders, err := client.GetCurrentOrders(symbol)
+	if err != nil {
+		return fmt.Errorf("failed to get current orders: %w", err)
+	}
+
+	if len(orders) == 0 {
+		fmt.Println("\n✅ 当前没有活跃订单")
+		return nil
+	}
+
+	fmt.Printf("\n✅ 找到 %d 个活跃订单:\n\n", len(orders))
+	printJSON(orders)
+	return nil
 }
 
 func cmdOrderHistory(c *cli.Context) error {
@@ -454,15 +496,15 @@ func cmdRun(c *cli.Context) error {
 
 	// 创建引擎配置
 	engineConfig := trader.EngineConfig{
-		Symbol:              cfg.Trading.DefaultSymbol,
-		DecisionInterval:    60, // 每60秒决策一次
-		MaxPosition:         0.01, // 最大持仓0.01 BTC
-		ClaudeModel:         "claude-3-5-sonnet-20241022",
-		ClaudeAPIKey:        claudeAPIKey,
+		Symbol:               cfg.Trading.DefaultSymbol,
+		DecisionInterval:     60,   // 每60秒决策一次
+		MaxPosition:          0.01, // 最大持仓0.01 BTC
+		ClaudeModel:          "claude-3-5-sonnet-20241022",
+		ClaudeAPIKey:         claudeAPIKey,
 		EnableMultiTimeframe: false, // 暂时禁用多时间框架（需要K线API支持）
-		EnableOrderBook:     false, // 暂时禁用订单簿（需要API支持）
-		DryRun:              c.Bool("dry-run"),
-		LogLevel:            cfg.Log.Level,
+		EnableOrderBook:      false, // 暂时禁用订单簿（需要API支持）
+		DryRun:               c.Bool("dry-run"),
+		LogLevel:             cfg.Log.Level,
 	}
 
 	// 创建交易引擎

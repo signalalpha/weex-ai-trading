@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	weexgo "github.com/signalalpha/weex-go"
 	"github.com/signalalpha/weex-ai-trading/internal/monitor"
+	weexgo "github.com/signalalpha/weex-go"
 )
 
 // Engine 交易引擎
@@ -31,13 +31,13 @@ func NewEngine(config EngineConfig, weexClient *weexgo.Client, logger *monitor.L
 
 	// 创建风险管理器
 	riskConfig := RiskConfig{
-		MaxPositionRatio:  0.8,   // 最大80%仓位
-		MaxDrawdown:       0.15,  // 最大15%回撤
-		MinConfidence:     60,    // 最低信心分数60
-		MaxTradesPerHour:  10,    // 每小时最多10笔交易
-		MinTradeInterval:  30,    // 最小交易间隔30秒
-		StopLossPercent:   0.03,  // 3%止损
-		TakeProfitPercent: 0.05,  // 5%止盈
+		MaxPositionRatio:  0.8,  // 最大80%仓位
+		MaxDrawdown:       0.15, // 最大15%回撤
+		MinConfidence:     60,   // 最低信心分数60
+		MaxTradesPerHour:  10,   // 每小时最多10笔交易
+		MinTradeInterval:  30,   // 最小交易间隔30秒
+		StopLossPercent:   0.03, // 3%止损
+		TakeProfitPercent: 0.05, // 5%止盈
 		EmergencyStop:     false,
 		DailyLossLimit:    0.10,  // 单日最大亏损10%
 		AllowShortSell:    false, // 不允许做空
@@ -170,16 +170,16 @@ func (e *Engine) collectMarketData() (MarketData, error) {
 	data := MarketData{
 		Symbol:     e.config.Symbol,
 		Timestamp:  time.Now(),
-		Price:      "100000",  // TODO: 从ticker获取实际价格
-		BidPrice:   "99999",   // TODO: 从ticker获取
-		AskPrice:   "100001",  // TODO: 从ticker获取
-		Change24h:  "0",       // TODO: 从ticker获取
-		Volume24h:  "1000",    // TODO: 从ticker获取
-		High24h:    "100500",  // TODO: 从ticker获取
-		Low24h:     "99500",   // TODO: 从ticker获取
-		Candles1m:  []Candle{},  // TODO: 获取实际K线
-		Candles5m:  []Candle{},  // TODO: 获取实际K线
-		Candles15m: []Candle{},  // TODO: 获取实际K线
+		Price:      "100000",   // TODO: 从ticker获取实际价格
+		BidPrice:   "99999",    // TODO: 从ticker获取
+		AskPrice:   "100001",   // TODO: 从ticker获取
+		Change24h:  "0",        // TODO: 从ticker获取
+		Volume24h:  "1000",     // TODO: 从ticker获取
+		High24h:    "100500",   // TODO: 从ticker获取
+		Low24h:     "99500",    // TODO: 从ticker获取
+		Candles1m:  []Candle{}, // TODO: 获取实际K线
+		Candles5m:  []Candle{}, // TODO: 获取实际K线
+		Candles15m: []Candle{}, // TODO: 获取实际K线
 		OrderBookData: OrderBook{
 			Bids:          [][]string{},
 			Asks:          [][]string{},
@@ -236,12 +236,15 @@ func (e *Engine) executeTrade(decision Decision, marketData MarketData) {
 		return
 	}
 
+	// 根据交易对精度调整数量
+	adjustedAmount := AdjustSizeToPrecision(decision.Amount, e.config.Symbol)
+
 	// 创建订单
 	req := &weexgo.CreateOrderRequest{
 		Symbol:    e.config.Symbol,
 		Side:      side,
-		OrderType: weexgo.OrderTypeMarket, // 市价单
-		Quantity:  fmt.Sprintf("%.6f", decision.Amount),
+		OrderType: weexgo.OrderTypeMarket,              // 市价单
+		Quantity:  fmt.Sprintf("%.6f", adjustedAmount), // 保留足够的小数位，API会验证精度
 	}
 
 	e.logger.Infof("📤 提交订单: %s %s %.6f BTC", side, e.config.Symbol, decision.Amount)
@@ -343,19 +346,19 @@ func (e *Engine) GetStatus() map[string]interface{} {
 	cacheHits, lastUpdate := e.claude.GetCacheStats()
 
 	return map[string]interface{}{
-		"running":         true,
-		"symbol":          e.config.Symbol,
-		"dry_run":         e.config.DryRun,
-		"total_trades":    metrics.TotalTrades,
-		"win_rate":        fmt.Sprintf("%.2f%%", metrics.WinRate*100),
-		"net_profit":      fmt.Sprintf("%.2f USDT", metrics.NetProfit),
-		"roi":             fmt.Sprintf("%.2f%%", metrics.ROI*100),
-		"current_balance": fmt.Sprintf("%.2f USDT", metrics.CurrentBalance),
-		"max_drawdown":    fmt.Sprintf("%.2f%%", metrics.MaxDrawdown*100),
-		"current_drawdown": fmt.Sprintf("%.2f%%", metrics.CurrentDrawdown*100),
-		"position":        e.position,
-		"risk_stats":      riskStats,
-		"claude_cache_hits": cacheHits,
+		"running":            true,
+		"symbol":             e.config.Symbol,
+		"dry_run":            e.config.DryRun,
+		"total_trades":       metrics.TotalTrades,
+		"win_rate":           fmt.Sprintf("%.2f%%", metrics.WinRate*100),
+		"net_profit":         fmt.Sprintf("%.2f USDT", metrics.NetProfit),
+		"roi":                fmt.Sprintf("%.2f%%", metrics.ROI*100),
+		"current_balance":    fmt.Sprintf("%.2f USDT", metrics.CurrentBalance),
+		"max_drawdown":       fmt.Sprintf("%.2f%%", metrics.MaxDrawdown*100),
+		"current_drawdown":   fmt.Sprintf("%.2f%%", metrics.CurrentDrawdown*100),
+		"position":           e.position,
+		"risk_stats":         riskStats,
+		"claude_cache_hits":  cacheHits,
 		"claude_last_update": lastUpdate.Format("15:04:05"),
 	}
 }

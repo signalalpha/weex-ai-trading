@@ -118,29 +118,29 @@ type PerformanceMetrics struct {
 
 // RiskConfig 风控配置
 type RiskConfig struct {
-	MaxPositionRatio  float64 `json:"max_position_ratio"`   // 最大仓位比例 (0-1)
-	MaxDrawdown       float64 `json:"max_drawdown"`         // 最大回撤限制 (0-1)
-	MinConfidence     int     `json:"min_confidence"`       // 最小信心分数 (0-100)
-	MaxTradesPerHour  int     `json:"max_trades_per_hour"`  // 每小时最大交易次数
-	MinTradeInterval  int     `json:"min_trade_interval"`   // 最小交易间隔（秒）
-	StopLossPercent   float64 `json:"stop_loss_percent"`    // 止损百分比
-	TakeProfitPercent float64 `json:"take_profit_percent"`  // 止盈百分比
-	EmergencyStop     bool    `json:"emergency_stop"`       // 紧急停止标志
-	DailyLossLimit    float64 `json:"daily_loss_limit"`     // 单日亏损限制
-	AllowShortSell    bool    `json:"allow_short_sell"`     // 是否允许做空
+	MaxPositionRatio  float64 `json:"max_position_ratio"`  // 最大仓位比例 (0-1)
+	MaxDrawdown       float64 `json:"max_drawdown"`        // 最大回撤限制 (0-1)
+	MinConfidence     int     `json:"min_confidence"`      // 最小信心分数 (0-100)
+	MaxTradesPerHour  int     `json:"max_trades_per_hour"` // 每小时最大交易次数
+	MinTradeInterval  int     `json:"min_trade_interval"`  // 最小交易间隔（秒）
+	StopLossPercent   float64 `json:"stop_loss_percent"`   // 止损百分比
+	TakeProfitPercent float64 `json:"take_profit_percent"` // 止盈百分比
+	EmergencyStop     bool    `json:"emergency_stop"`      // 紧急停止标志
+	DailyLossLimit    float64 `json:"daily_loss_limit"`    // 单日亏损限制
+	AllowShortSell    bool    `json:"allow_short_sell"`    // 是否允许做空
 }
 
 // EngineConfig 引擎配置
 type EngineConfig struct {
-	Symbol              string  `json:"symbol"`
-	DecisionInterval    int     `json:"decision_interval"`     // 决策间隔（秒）
-	MaxPosition         float64 `json:"max_position"`          // 最大持仓（BTC）
-	ClaudeModel         string  `json:"claude_model"`          // Claude模型
-	ClaudeAPIKey        string  `json:"claude_api_key"`        // Claude API Key
-	EnableMultiTimeframe bool   `json:"enable_multi_timeframe"` // 启用多时间框架分析
-	EnableOrderBook     bool    `json:"enable_order_book"`     // 启用订单簿分析
-	DryRun              bool    `json:"dry_run"`               // 模拟运行（不实际下单）
-	LogLevel            string  `json:"log_level"`             // 日志级别
+	Symbol               string  `json:"symbol"`
+	DecisionInterval     int     `json:"decision_interval"`      // 决策间隔（秒）
+	MaxPosition          float64 `json:"max_position"`           // 最大持仓（BTC）
+	ClaudeModel          string  `json:"claude_model"`           // Claude模型
+	ClaudeAPIKey         string  `json:"claude_api_key"`         // Claude API Key
+	EnableMultiTimeframe bool    `json:"enable_multi_timeframe"` // 启用多时间框架分析
+	EnableOrderBook      bool    `json:"enable_order_book"`      // 启用订单簿分析
+	DryRun               bool    `json:"dry_run"`                // 模拟运行（不实际下单）
+	LogLevel             string  `json:"log_level"`              // 日志级别
 }
 
 // DecisionCache 决策缓存（避免频繁调用API）

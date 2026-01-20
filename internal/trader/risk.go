@@ -8,12 +8,12 @@ import (
 
 // RiskManager 风险管理器
 type RiskManager struct {
-	config         RiskConfig
-	mu             sync.RWMutex
-	tradeHistory   []time.Time    // 交易时间历史
-	dailyPNL       map[string]float64 // 每日盈亏记录，key为日期
-	lastTradeTime  time.Time
-	emergencyStop  bool
+	config        RiskConfig
+	mu            sync.RWMutex
+	tradeHistory  []time.Time        // 交易时间历史
+	dailyPNL      map[string]float64 // 每日盈亏记录，key为日期
+	lastTradeTime time.Time
+	emergencyStop bool
 }
 
 // NewRiskManager 创建风险管理器

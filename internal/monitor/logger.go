@@ -59,4 +59,3 @@ func NewLogger(level, output string) *Logger {
 
 	return &Logger{Logger: logger}
 }
-

@@ -10,10 +10,10 @@ import (
 
 // PerformanceTracker 性能追踪器
 type PerformanceTracker struct {
-	metrics   PerformanceMetrics
-	trades    []Trade
-	mu        sync.RWMutex
-	returns   []float64 // 每次交易的收益率，用于计算夏普比率
+	metrics PerformanceMetrics
+	trades  []Trade
+	mu      sync.RWMutex
+	returns []float64 // 每次交易的收益率，用于计算夏普比率
 }
 
 // NewPerformanceTracker 创建性能追踪器
@@ -21,12 +21,12 @@ func NewPerformanceTracker(initialBalance float64) *PerformanceTracker {
 	now := time.Now()
 	return &PerformanceTracker{
 		metrics: PerformanceMetrics{
-			InitialBalance:  initialBalance,
-			CurrentBalance:  initialBalance,
-			PeakBalance:     initialBalance,
-			StartTime:       now,
-			LastUpdateTime:  now,
-			TradingDays:     0,
+			InitialBalance: initialBalance,
+			CurrentBalance: initialBalance,
+			PeakBalance:    initialBalance,
+			StartTime:      now,
+			LastUpdateTime: now,
+			TradingDays:    0,
 		},
 		trades:  make([]Trade, 0),
 		returns: make([]float64, 0),

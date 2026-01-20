@@ -23,6 +23,7 @@ type WEEXConfig struct {
 	Env        string `mapstructure:"env"` // production or testnet
 	APIBaseURL string `mapstructure:"api_base_url"`
 	WSURL      string `mapstructure:"ws_url"`
+	Proxy      string `mapstructure:"proxy"` // HTTP proxy URL
 }
 
 // LogConfig contains logging configuration
@@ -95,6 +96,14 @@ func Load(configPath ...string) (*Config, error) {
 	}
 	if envEnv := os.Getenv("WEEX_ENV"); envEnv != "" {
 		cfg.WEEX.Env = envEnv
+	}
+	// Read proxy from environment variables (WEEX_PROXY, HTTPS_PROXY, or HTTP_PROXY)
+	if envProxy := os.Getenv("WEEX_PROXY"); envProxy != "" {
+		cfg.WEEX.Proxy = envProxy
+	} else if envProxy := os.Getenv("HTTPS_PROXY"); envProxy != "" {
+		cfg.WEEX.Proxy = envProxy
+	} else if envProxy := os.Getenv("HTTP_PROXY"); envProxy != "" {
+		cfg.WEEX.Proxy = envProxy
 	}
 
 	// Validate required fields
