@@ -108,7 +108,28 @@
                 "-c",
                 "${workspaceFolder}/configs/config.yaml",
                 "orders", "-s", "cmt_btcusdt"],
-        }
+        },
+        {
+            "name": "Launch Trader - Place Order with Proxy",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/trader",
+            "args": ["order", "-s", "cmt_btcusdt", "-d", "buy", "-t", "market", "-z", "10"],
+        },
+        {
+            "name": "Launch Trader - Sync Orders",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/cmd/sync",
+            "args": [
+                "-c",
+                "${workspaceFolder}/configs/sync_config.yaml",
+                "run"
+            ],
+        },
     ]
 }
 

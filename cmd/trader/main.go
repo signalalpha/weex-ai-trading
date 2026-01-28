@@ -251,11 +251,37 @@ func cmdAccount(c *cli.Context) error {
 		return err
 	}
 
+	// 获取 logger
+	logger, ok := c.App.Metadata["logger"].(*monitor.Logger)
+	if !ok {
+		logger = monitor.NewLogger("info", "both") // 默认日志配置
+	}
+
 	fmt.Println("查询账户信息...")
+
+	// 记录请求详情到日志
+	logger.WithFields(map[string]interface{}{
+		"action":   "get_account_assets",
+		"endpoint": "/capi/v2/account/assets",
+		"method":   "GET",
+	}).Info("📤 查询账户资产请求")
+
 	accountAssets, err := client.GetAccountAssets()
 	if err != nil {
+		logger.WithError(err).WithFields(map[string]interface{}{
+			"action":   "get_account_assets",
+			"endpoint": "/capi/v2/account/assets",
+		}).Error("❌ 查询账户资产失败")
 		return fmt.Errorf("failed to get account assets: %w", err)
 	}
+
+	// 记录响应详情到日志
+	assetsJSON, _ := json.Marshal(accountAssets)
+	logger.WithFields(map[string]interface{}{
+		"action":   "get_account_assets",
+		"endpoint": "/capi/v2/account/assets",
+		"response": string(assetsJSON),
+	}).Info("📥 查询账户资产响应")
 
 	fmt.Println("\n账户信息:")
 	printJSON(accountAssets)
@@ -268,13 +294,41 @@ func cmdPrice(c *cli.Context) error {
 		return err
 	}
 
+	// 获取 logger
+	logger, ok := c.App.Metadata["logger"].(*monitor.Logger)
+	if !ok {
+		logger = monitor.NewLogger("info", "both") // 默认日志配置
+	}
+
 	symbol := c.String("symbol")
 	fmt.Printf("获取 %s 价格...\n", symbol)
 
+	// 记录请求详情到日志
+	logger.WithFields(map[string]interface{}{
+		"action":   "get_ticker",
+		"endpoint": "/capi/v2/market/ticker",
+		"method":   "GET",
+		"symbol":   symbol,
+	}).Info("📤 查询价格请求")
+
 	ticker, err := client.GetTicker(symbol)
 	if err != nil {
+		logger.WithError(err).WithFields(map[string]interface{}{
+			"action":   "get_ticker",
+			"endpoint": "/capi/v2/market/ticker",
+			"symbol":   symbol,
+		}).Error("❌ 查询价格失败")
 		return fmt.Errorf("failed to get ticker: %w", err)
 	}
+
+	// 记录响应详情到日志
+	tickerJSON, _ := json.Marshal(ticker)
+	logger.WithFields(map[string]interface{}{
+		"action":   "get_ticker",
+		"endpoint": "/capi/v2/market/ticker",
+		"symbol":   symbol,
+		"response": string(tickerJSON),
+	}).Info("📥 查询价格响应")
 
 	fmt.Printf("\n%s 行情信息:\n", symbol)
 	printJSON(ticker)
@@ -287,6 +341,12 @@ func cmdSetLeverage(c *cli.Context) error {
 		return err
 	}
 
+	// 获取 logger
+	logger, ok := c.App.Metadata["logger"].(*monitor.Logger)
+	if !ok {
+		logger = monitor.NewLogger("info", "both") // 默认日志配置
+	}
+
 	symbol := c.String("symbol")
 	longLeverage := c.String("long")
 	shortLeverage := c.String("short")
@@ -294,10 +354,34 @@ func cmdSetLeverage(c *cli.Context) error {
 
 	fmt.Printf("设置 %s 杠杆: 做多=%sx, 做空=%sx, 模式=%d...\n", symbol, longLeverage, shortLeverage, marginMode)
 
+	// 记录请求详情到日志
+	logger.WithFields(map[string]interface{}{
+		"action":         "set_leverage",
+		"endpoint":       "/capi/v2/account/leverage",
+		"method":         "POST",
+		"symbol":         symbol,
+		"long_leverage":  longLeverage,
+		"short_leverage": shortLeverage,
+		"margin_mode":    marginMode,
+	}).Info("📤 设置杠杆请求")
+
 	err = client.SetLeverage(symbol, marginMode, longLeverage, shortLeverage)
 	if err != nil {
+		logger.WithError(err).WithFields(map[string]interface{}{
+			"action":   "set_leverage",
+			"endpoint": "/capi/v2/account/leverage",
+			"symbol":   symbol,
+		}).Error("❌ 设置杠杆失败")
 		return fmt.Errorf("failed to set leverage: %w", err)
 	}
+
+	// 记录响应详情到日志
+	logger.WithFields(map[string]interface{}{
+		"action":   "set_leverage",
+		"endpoint": "/capi/v2/account/leverage",
+		"symbol":   symbol,
+		"status":   "success",
+	}).Info("📥 设置杠杆响应")
 
 	fmt.Println("✅ 杠杆设置成功")
 	return nil
@@ -307,6 +391,12 @@ func cmdPlaceOrder(c *cli.Context) error {
 	client, err := getClient(c)
 	if err != nil {
 		return err
+	}
+
+	// 获取 logger
+	logger, ok := c.App.Metadata["logger"].(*monitor.Logger)
+	if !ok {
+		logger = monitor.NewLogger("info", "both") // 默认日志配置
 	}
 
 	symbol := c.String("symbol")
@@ -369,13 +459,71 @@ func cmdPlaceOrder(c *cli.Context) error {
 	fmt.Printf("下单: %s %s %s %s USDT...\n", side, orderType, symbol, size)
 	fmt.Printf("订单参数: %+v\n", req)
 
+	// 记录请求详情到日志（包含完整的请求信息）
+	reqJSON, _ := json.Marshal(req)
+
+	clientOID := fmt.Sprintf("%d", time.Now().UnixMilli())
+	// 构建实际发送给 API 的请求体格式（用于日志）
+	apiRequestBody := map[string]interface{}{
+		"symbol":      req.Symbol,
+		"client_oid":  clientOID,
+		"size":        req.Quantity,
+		"type":        map[string]string{"buy": "1", "sell": "2"}[string(req.Side)],
+		"order_type":  "0",
+		"match_price": map[string]string{"market": "1", "limit": "0"}[string(req.OrderType)],
+		"price":       req.Price,
+	}
+	apiBodyJSON, _ := json.Marshal(apiRequestBody)
+
+	logger.WithFields(map[string]interface{}{
+		"action":           "place_order",
+		"endpoint":         "/capi/v2/order/placeOrder",
+		"method":           "POST",
+		"symbol":           req.Symbol,
+		"side":             string(req.Side),
+		"order_type":       string(req.OrderType),
+		"quantity":         req.Quantity,
+		"price":            req.Price,
+		"size_original":    size,
+		"size_adjusted":    adjustedSizeStr,
+		"request_body_sdk": string(reqJSON),
+		"request_body_api": string(apiBodyJSON),
+	}).Info("📤 下单请求 - SDK参数和API请求体格式")
+
 	order, err := client.CreateOrder(req)
 	if err != nil {
+		logger.WithError(err).WithFields(map[string]interface{}{
+			"action":   "place_order",
+			"endpoint": "/capi/v2/order/placeOrder",
+			"symbol":   req.Symbol,
+		}).Error("❌ 下单失败")
 		return fmt.Errorf("failed to create order: %w", err)
 	}
 
+	// 记录响应详情到日志
+	orderJSON, _ := json.Marshal(order)
+	logger.WithFields(map[string]interface{}{
+		"action":   "place_order",
+		"endpoint": "/capi/v2/order/placeOrder",
+		"symbol":   req.Symbol,
+		"order_id": order.GetOrderID(),
+		"response": string(orderJSON),
+	}).Info("📥 下单响应")
+
 	fmt.Println("\n✅ 订单创建成功:")
 	printJSON(order)
+
+	// Check if we got an order ID
+	orderID := order.GetOrderID()
+	if orderID != "" {
+		fmt.Printf("\n订单ID: %s\n", orderID)
+		fmt.Println("\n提示: 如果查询不到订单，可能是订单已立即成交。")
+		fmt.Println("      限价单如果价格接近市价，可能会立即成交。")
+	} else {
+		fmt.Println("\n⚠️  警告: 未获取到订单ID，但API返回成功。")
+		fmt.Println("      订单可能已创建，请稍后查询订单状态。")
+	}
+
 	return nil
 }
 

@@ -16,3 +16,12 @@ api_keys_4
 amy的key
 api_keys_5
 Medy的key
+
+api_keys_6
+因为Makabaka帐号问题，单独拿出来测试。后三个是KOL：秋荣、挖矿、linda
+
+api_keys_7
+Jimmy的第二个
+
+api_keys_8
+Ryan的Key，他一直没法交易，所以单独验证一下。

@@ -49,7 +49,18 @@ func NewLogger(level, output string) *Logger {
 			writers = []io.Writer{os.Stdout, file}
 		}
 	default:
-		writers = []io.Writer{os.Stdout}
+		// 如果不是标准值，尝试作为文件路径
+		if output != "console" {
+			file, err := os.OpenFile(output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			if err != nil {
+				logger.Warnf("Failed to open log file %s: %v, falling back to console", output, err)
+				writers = []io.Writer{os.Stdout}
+			} else {
+				writers = []io.Writer{file}
+			}
+		} else {
+			writers = []io.Writer{os.Stdout}
+		}
 	}
 
 	logger.SetOutput(io.MultiWriter(writers...))

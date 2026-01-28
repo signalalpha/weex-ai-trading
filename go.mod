@@ -4,6 +4,7 @@ go 1.25.3
 
 require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.6
+	github.com/lib/pq v1.10.9
 	github.com/signalalpha/weex-go v0.2.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.2
@@ -37,3 +38,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/signalalpha/weex-go => ../weex-go

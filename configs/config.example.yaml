@@ -23,3 +23,6 @@ risk:
   stop_loss_percentage: 0.02     # Stop loss (2%)
   take_profit_percentage: 0.05   # Take profit (5%)
 
+# 注意: 订单同步服务使用独立的配置文件 sync_config.yaml
+# 如需使用同步服务，请参考 configs/sync_config.example.yaml
+
